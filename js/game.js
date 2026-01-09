@@ -21,10 +21,11 @@ class DnDGame {
         this.score = 0;
         this.startTime = null;
         this.timerInterval = null;
+        this.shootingMode = false; // Are we selecting a direction to shoot?
         
-        // Entity positions (will populate these later)
+        // Entity positions
         this.dragon = { x: -1, y: -1, alive: true };
-        this.arrow = { x: -1, y: -1, collected: false };
+        this.arrow = { x: -1, y: -1, collected: false, inFlight: false };
         this.rope = { x: -1, y: -1, collected: false };
         this.pits = [];
         this.bats = [];
@@ -68,14 +69,14 @@ class DnDGame {
     }
     
     bindEvents() {
-        // Movement buttons
-        this.btnNorth.addEventListener('click', () => this.movePlayer('north'));
-        this.btnEast.addEventListener('click', () => this.movePlayer('east'));
-        this.btnSouth.addEventListener('click', () => this.movePlayer('south'));
-        this.btnWest.addEventListener('click', () => this.movePlayer('west'));
+        // Movement buttons - dual purpose: move or shoot direction
+        this.btnNorth.addEventListener('click', () => this.handleDirectionButton('north'));
+        this.btnEast.addEventListener('click', () => this.handleDirectionButton('east'));
+        this.btnSouth.addEventListener('click', () => this.handleDirectionButton('south'));
+        this.btnWest.addEventListener('click', () => this.handleDirectionButton('west'));
         
         // Action buttons
-        this.btnShoot.addEventListener('click', () => this.shootArrow());
+        this.btnShoot.addEventListener('click', () => this.initiateShoot());
         this.btnNewGame.addEventListener('click', () => this.newGame());
         
         // Keyboard controls
@@ -85,27 +86,48 @@ class DnDGame {
     handleKeyPress(e) {
         if (!this.gameActive) return;
         
+        // Prevent default for arrow keys
+        if (e.key.startsWith('Arrow')) {
+            e.preventDefault();
+        }
+        
         switch(e.key.toLowerCase()) {
             case 'w':
             case 'arrowup':
-                this.movePlayer('north');
+                this.handleDirectionButton('north');
                 break;
             case 'd':
             case 'arrowright':
-                this.movePlayer('east');
+                this.handleDirectionButton('east');
                 break;
             case 's':
             case 'arrowdown':
-                this.movePlayer('south');
+                this.handleDirectionButton('south');
                 break;
             case 'a':
             case 'arrowleft':
-                this.movePlayer('west');
+                this.handleDirectionButton('west');
                 break;
             case ' ':
             case 'enter':
-                this.shootArrow();
+                this.initiateShoot();
                 break;
+            case 'escape':
+                // Cancel shooting mode
+                if (this.shootingMode) {
+                    this.cancelShoot();
+                }
+                break;
+        }
+    }
+    
+    handleDirectionButton(direction) {
+        if (this.shootingMode) {
+            // We're in shooting mode - this selects direction to shoot
+            this.shootArrow(direction);
+        } else {
+            // Normal movement
+            this.movePlayer(direction);
         }
     }
     
@@ -124,8 +146,9 @@ class DnDGame {
         this.score = 0;
         this.gameActive = true;
         this.startTime = Date.now();
+        this.shootingMode = false;
         
-        // Place entities randomly (we'll implement this properly in next phase)
+        // Place entities randomly
         this.placeEntities();
         
         // Start timer
@@ -133,13 +156,11 @@ class DnDGame {
         
         // Update display
         this.updateDisplay();
+        this.updateButtonStates();
         this.showMessage('Find the magical arrow, then slay the dragon!');
     }
     
     placeEntities() {
-        // For now, just place them randomly
-        // We'll make this smarter in the next phase
-        
         // Dragon - random position (not at player start)
         do {
             this.dragon.x = Math.floor(Math.random() * this.gridSize);
@@ -154,8 +175,9 @@ class DnDGame {
         } while ((this.arrow.x === 0 && this.arrow.y === 0) || 
                  (this.arrow.x === this.dragon.x && this.arrow.y === this.dragon.y));
         this.arrow.collected = false;
+        this.arrow.inFlight = false;
         
-        // Rope - random position (we'll make this difficulty-dependent later)
+        // Rope - random position
         do {
             this.rope.x = Math.floor(Math.random() * this.gridSize);
             this.rope.y = Math.floor(Math.random() * this.gridSize);
@@ -170,10 +192,7 @@ class DnDGame {
     }
     
     movePlayer(direction) {
-        if (!this.gameActive) return;
-        
-        const oldX = this.player.x;
-        const oldY = this.player.y;
+        if (!this.gameActive || this.shootingMode) return;
         
         // Move player with wrap-around (10x10 grid wraps to opposite side)
         switch(direction) {
@@ -203,10 +222,18 @@ class DnDGame {
         const py = this.player.y;
         
         // Check for arrow pickup
-        if (!this.arrow.collected && px === this.arrow.x && py === this.arrow.y) {
+        if (!this.arrow.collected && !this.arrow.inFlight && px === this.arrow.x && py === this.arrow.y) {
             this.player.hasArrow = true;
             this.arrow.collected = true;
             this.showMessage('You found the magical arrow!');
+        }
+        
+        // Check for arrow retrieval (after shooting and missing)
+        if (this.arrow.inFlight && px === this.arrow.x && py === this.arrow.y) {
+            this.player.hasArrow = true;
+            this.arrow.inFlight = false;
+            this.arrow.collected = true;
+            this.showMessage('You retrieved your arrow!');
         }
         
         // Check for rope pickup
@@ -219,6 +246,7 @@ class DnDGame {
         // Check for dragon (game over if you walk into it)
         if (this.dragon.alive && px === this.dragon.x && py === this.dragon.y) {
             this.gameOver('The dragon devoured you! Game Over!');
+            return;
         }
         
         // Check proximity to dragon
@@ -234,25 +262,31 @@ class DnDGame {
         
         // Check if dragon is adjacent (with wrap-around)
         if (this.dragon.alive) {
+            let dragonNearby = false;
+            
             // North
             if (this.isAdjacent(px, py, 'north', this.dragon.x, this.dragon.y)) {
                 this.northIndicator.classList.add('active');
-                this.showMessage('You hear a dragon roar from the North!');
+                dragonNearby = true;
             }
             // East
             if (this.isAdjacent(px, py, 'east', this.dragon.x, this.dragon.y)) {
                 this.eastIndicator.classList.add('active');
-                this.showMessage('You hear a dragon roar from the East!');
+                dragonNearby = true;
             }
             // South
             if (this.isAdjacent(px, py, 'south', this.dragon.x, this.dragon.y)) {
                 this.southIndicator.classList.add('active');
-                this.showMessage('You hear a dragon roar from the South!');
+                dragonNearby = true;
             }
             // West
             if (this.isAdjacent(px, py, 'west', this.dragon.x, this.dragon.y)) {
                 this.westIndicator.classList.add('active');
-                this.showMessage('You hear a dragon roar from the West!');
+                dragonNearby = true;
+            }
+            
+            if (dragonNearby) {
+                this.showMessage('🐉 You hear a dragon roar nearby!');
             }
         }
     }
@@ -273,7 +307,11 @@ class DnDGame {
         }
     }
     
-    shootArrow() {
+    // ===================================
+    // Shooting Mechanics
+    // ===================================
+    
+    initiateShoot() {
         if (!this.gameActive) return;
         
         if (!this.player.hasArrow) {
@@ -281,8 +319,95 @@ class DnDGame {
             return;
         }
         
-        // For now, just a placeholder - we'll implement shooting logic in next phase
-        this.showMessage('Shooting mechanic coming in Phase 3!');
+        // Enter shooting mode
+        this.shootingMode = true;
+        this.showMessage('🏹 Select a direction to shoot! (or ESC to cancel)');
+        this.updateButtonStates();
+    }
+    
+    cancelShoot() {
+        this.shootingMode = false;
+        this.showMessage('Shooting cancelled.');
+        this.updateButtonStates();
+    }
+    
+    shootArrow(direction) {
+        if (!this.gameActive || !this.shootingMode) return;
+        
+        // Exit shooting mode
+        this.shootingMode = false;
+        
+        // Player no longer has arrow
+        this.player.hasArrow = false;
+        
+        // Calculate where arrow lands based on direction
+        const arrowPath = this.calculateArrowPath(direction);
+        
+        // Check if dragon is in the path
+        if (this.isDragonInPath(arrowPath)) {
+            // HIT! Player wins!
+            this.dragon.alive = false;
+            this.win();
+        } else {
+            // MISS! Arrow lands at end of path
+            const landingSpot = arrowPath[arrowPath.length - 1];
+            this.arrow.x = landingSpot.x;
+            this.arrow.y = landingSpot.y;
+            this.arrow.inFlight = true;
+            this.arrow.collected = false;
+            
+            const coordinate = this.getCoordinate(this.arrow.x, this.arrow.y);
+            this.showMessage(`💨 Your arrow missed! It landed at ${coordinate}. Go retrieve it!`);
+            
+            // Reposition dragon to a new random location (not at player, not at arrow)
+            this.repositionDragon();
+        }
+        
+        // Update display
+        this.updateDisplay();
+        this.updateButtonStates();
+    }
+    
+    calculateArrowPath(direction) {
+        const path = [];
+        let x = this.player.x;
+        let y = this.player.y;
+        
+        // Arrow travels in direction until it wraps around back to starting row/column
+        for (let i = 0; i < this.gridSize; i++) {
+            switch(direction) {
+                case 'north':
+                    y = (y - 1 + this.gridSize) % this.gridSize;
+                    break;
+                case 'east':
+                    x = (x + 1) % this.gridSize;
+                    break;
+                case 'south':
+                    y = (y + 1) % this.gridSize;
+                    break;
+                case 'west':
+                    x = (x - 1 + this.gridSize) % this.gridSize;
+                    break;
+            }
+            path.push({ x, y });
+        }
+        
+        return path;
+    }
+    
+    isDragonInPath(path) {
+        return path.some(pos => pos.x === this.dragon.x && pos.y === this.dragon.y);
+    }
+    
+    repositionDragon() {
+        // Move dragon to new random position (not at player, not at arrow)
+        do {
+            this.dragon.x = Math.floor(Math.random() * this.gridSize);
+            this.dragon.y = Math.floor(Math.random() * this.gridSize);
+        } while ((this.dragon.x === this.player.x && this.dragon.y === this.player.y) ||
+                 (this.dragon.x === this.arrow.x && this.dragon.y === this.arrow.y));
+        
+        console.log(`Dragon repositioned to ${this.getCoordinate(this.dragon.x, this.dragon.y)}`);
     }
     
     // ===================================
@@ -298,6 +423,26 @@ class DnDGame {
         this.scoreDisplay.textContent = this.score;
         this.hasArrowDisplay.textContent = this.player.hasArrow ? 'Yes' : 'No';
         this.hasRopeDisplay.textContent = this.player.hasRope ? 'Yes' : 'No';
+    }
+    
+    updateButtonStates() {
+        if (this.shootingMode) {
+            // In shooting mode - highlight direction buttons
+            this.btnNorth.style.backgroundColor = '#004400';
+            this.btnEast.style.backgroundColor = '#004400';
+            this.btnSouth.style.backgroundColor = '#004400';
+            this.btnWest.style.backgroundColor = '#004400';
+            this.btnShoot.textContent = 'CANCEL';
+            this.btnShoot.style.backgroundColor = '#440000';
+        } else {
+            // Normal mode
+            this.btnNorth.style.backgroundColor = '';
+            this.btnEast.style.backgroundColor = '';
+            this.btnSouth.style.backgroundColor = '';
+            this.btnWest.style.backgroundColor = '';
+            this.btnShoot.textContent = 'SHOOT';
+            this.btnShoot.style.backgroundColor = '';
+        }
     }
     
     getCoordinate(x, y) {
@@ -343,6 +488,7 @@ class DnDGame {
         this.gameActive = false;
         clearInterval(this.timerInterval);
         this.showMessage(message);
+        this.clearDirectionIndicators();
     }
     
     win() {
@@ -354,7 +500,8 @@ class DnDGame {
         this.score = Math.floor(elapsed / 5);
         this.scoreDisplay.textContent = this.score;
         
-        this.showMessage(`Victory! You slayed the dragon! Score: ${this.score}`);
+        this.clearDirectionIndicators();
+        this.showMessage(`🎉 VICTORY! You slayed the dragon! Score: ${this.score} 🎉`);
     }
 }
 
