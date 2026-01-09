@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D LCD Game - Mattel 1981 Recreation</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1>Dungeons & Dragons</h1>
+            <p class="subtitle">Computer Fantasy Game</p>
+        </header>
+
+        <div class="game-display">
+            <!-- Isometric dungeon view will go here -->
+            <div id="dungeon-view" class="dungeon-view">
+                <div id="position-display" class="position-display">A0</div>
+            </div>
+
+            <!-- Status indicators -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="label">Score:</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Time:</span>
+                    <span id="time">0:00</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Has Arrow:</span>
+                    <span id="has-arrow">No</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Has Rope:</span>
+                    <span id="has-rope">No</span>
+                </div>
+            </div>
+
+            <!-- Direction indicators for nearby entities -->
+            <div class="direction-indicators">
+                <div id="north-indicator" class="indicator north">N</div>
+                <div id="east-indicator" class="indicator east">E</div>
+                <div id="south-indicator" class="indicator south">S</div>
+                <div id="west-indicator" class="indicator west">W</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="button-group">
+                <button id="btn-north" class="dir-btn">↑ North</button>
+            </div>
+            <div class="button-group">
+                <button id="btn-west" class="dir-btn">← West</button>
+                <button id="btn-shoot" class="action-btn">SHOOT</button>
+                <button id="btn-east" class="dir-btn">→ East</button>
+            </div>
+            <div class="button-group">
+                <button id="btn-south" class="dir-btn">↓ South</button>
+            </div>
+            <div class="button-group">
+                <button id="btn-new-game" class="action-btn">New Game</button>
+            </div>
+        </div>
+
+        <div class="game-info">
+            <p id="message-display">Find the magical arrow, then slay the dragon!</p>
+        </div>
+    </div>
+
+    <script src="js/game.js" type="module"></script>
+</body>
+</html>
