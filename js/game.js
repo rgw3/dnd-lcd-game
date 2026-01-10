@@ -618,9 +618,11 @@ class DnDGame {
         const px = this.player.x;
         const py = this.player.y;
         
+        // Check if landed in pit
         if (this.isPitAt(px, py)) {
             if (this.player.hasRope) {
-                this.showMessage(`${flightMessage} | ⚠️ Landed in a pit! Your rope saved you!`);
+                // Add pit message to flight message and continue to check proximity
+                flightMessage = `${flightMessage} | ⚠️ Landed in a pit! Your rope saved you!`;
             } else {
                 this.audio.playPitFall();
                 this.gameOver('💀 Bat dropped you into a pit! You died! Game Over!');
@@ -628,12 +630,14 @@ class DnDGame {
             }
         }
         
+        // Check if landed on dragon
         if (this.dragon.alive && px === this.dragon.x && py === this.dragon.y) {
             this.audio.playDragonRoar();
             this.gameOver('🐉 Bat dropped you on the dragon! You were devoured! Game Over!');
             return;
         }
         
+        // Check proximity and combine with flight message (and any pit message)
         this.checkProximityAfterFlight(flightMessage);
     }
     
@@ -641,6 +645,8 @@ class DnDGame {
         const px = this.player.x;
         const py = this.player.y;
         let warnings = [];
+        
+        console.log(`checkProximityAfterFlight called at position (${px}, ${py}) = ${this.getCoordinate(px, py)}`);
         
         if (this.dragon.alive) {
             let dragonNearby = false;
@@ -655,6 +661,7 @@ class DnDGame {
             if (dragonNearby) {
                 warnings.push('🐉 DRAGON roars nearby!');
                 this.audio.playDragonRoar();
+                console.log('Dragon detected nearby');
             }
         }
         
@@ -665,6 +672,7 @@ class DnDGame {
                 this.isAdjacent(px, py, 'south', pit.x, pit.y) ||
                 this.isAdjacent(px, py, 'west', pit.x, pit.y)) {
                 pitNearby = true;
+                console.log(`Pit detected nearby at ${this.getCoordinate(pit.x, pit.y)}`);
                 break;
             }
         }
@@ -680,6 +688,7 @@ class DnDGame {
                 this.isAdjacent(px, py, 'south', bat.x, bat.y) ||
                 this.isAdjacent(px, py, 'west', bat.x, bat.y)) {
                 batNearby = true;
+                console.log(`Bat detected nearby at ${this.getCoordinate(bat.x, bat.y)}`);
                 break;
             }
         }
@@ -687,6 +696,9 @@ class DnDGame {
         if (batNearby) {
             warnings.push('🦇 You hear flapping wings...');
         }
+        
+        console.log(`Warnings array: ${JSON.stringify(warnings)}`);
+        console.log(`Final message: ${flightMessage}${warnings.length > 0 ? ' | ' + warnings.join(' | ') : ''}`);
         
         if (warnings.length > 0) {
             this.showMessage(`${flightMessage} | ${warnings.join(' | ')}`);
@@ -699,6 +711,8 @@ class DnDGame {
         const px = this.player.x;
         const py = this.player.y;
         let warnings = [];
+        
+        console.log(`checkProximity called at position (${px}, ${py}) = ${this.getCoordinate(px, py)}, pickupMessage: ${pickupMessage}`);
         
         if (this.dragon.alive) {
             let dragonNearby = false;
@@ -713,6 +727,7 @@ class DnDGame {
             if (dragonNearby) {
                 warnings.push('🐉 DRAGON roars nearby!');
                 this.audio.playDragonRoar();
+                console.log('Dragon detected nearby');
             }
         }
         
@@ -723,6 +738,7 @@ class DnDGame {
                 this.isAdjacent(px, py, 'south', pit.x, pit.y) ||
                 this.isAdjacent(px, py, 'west', pit.x, pit.y)) {
                 pitNearby = true;
+                console.log(`Pit detected nearby at ${this.getCoordinate(pit.x, pit.y)}`);
                 break;
             }
         }
@@ -738,6 +754,7 @@ class DnDGame {
                 this.isAdjacent(px, py, 'south', bat.x, bat.y) ||
                 this.isAdjacent(px, py, 'west', bat.x, bat.y)) {
                 batNearby = true;
+                console.log(`Bat detected nearby at ${this.getCoordinate(bat.x, bat.y)}`);
                 break;
             }
         }
@@ -745,6 +762,8 @@ class DnDGame {
         if (batNearby) {
             warnings.push(`🦇 You hear flapping wings...`);
         }
+        
+        console.log(`Warnings array: ${JSON.stringify(warnings)}`);
         
         // Combine pickup message with proximity warnings
         if (pickupMessage) {
