@@ -190,7 +190,8 @@ class DnDGame {
             x: 0,
             y: 0,
             hasArrow: false,
-            hasRope: false
+            hasRope: false,
+            facing: 'north'  // Track which direction player is facing
         };
         
         this.gameActive = false;
@@ -411,6 +412,7 @@ class DnDGame {
         this.player.y = 0;
         this.player.hasArrow = false;
         this.player.hasRope = false;
+        this.player.facing = 'north';
         
         this.score = 0;
         this.gameActive = true;
@@ -493,6 +495,9 @@ class DnDGame {
     movePlayer(direction) {
         if (!this.gameActive || this.shootingMode) return;
         
+        // Update facing direction
+        this.player.facing = direction;
+        
         switch(direction) {
             case 'north':
                 this.player.y = (this.player.y - 1 + this.gridSize) % this.gridSize;
@@ -531,7 +536,8 @@ class DnDGame {
         // Check for pit (highest priority danger after bat)
         if (this.isPitAt(px, py)) {
             if (this.player.hasRope) {
-                this.showMessage('⚠️ You fell in a pit! Your rope saved you!');
+                this.player.hasRope = false; // Rope is consumed after use
+                this.showMessage('⚠️ You fell in a pit! Your rope saved you! (Rope consumed)');
             } else {
                 this.audio.playPitFall();
                 this.gameOver('💀 You fell into a pit and died! Game Over!');
@@ -612,6 +618,7 @@ class DnDGame {
         this.updateDisplay();
         this.renderDungeon();
         this.checkPositionAfterFlight(batMessage);
+        this.updateDisplay(); // Update again in case rope was consumed
     }
     
     checkPositionAfterFlight(flightMessage) {
@@ -621,8 +628,9 @@ class DnDGame {
         // Check if landed in pit
         if (this.isPitAt(px, py)) {
             if (this.player.hasRope) {
+                this.player.hasRope = false; // Rope is consumed after use
                 // Add pit message to flight message and continue to check proximity
-                flightMessage = `${flightMessage} | ⚠️ Landed in a pit! Your rope saved you!`;
+                flightMessage = `${flightMessage} | ⚠️ Landed in a pit! Your rope saved you! (Rope consumed)`;
             } else {
                 this.audio.playPitFall();
                 this.gameOver('💀 Bat dropped you into a pit! You died! Game Over!');
@@ -646,8 +654,6 @@ class DnDGame {
         const py = this.player.y;
         let warnings = [];
         
-        console.log(`checkProximityAfterFlight called at position (${px}, ${py}) = ${this.getCoordinate(px, py)}`);
-        
         if (this.dragon.alive) {
             let dragonNearby = false;
             
@@ -661,7 +667,6 @@ class DnDGame {
             if (dragonNearby) {
                 warnings.push('🐉 DRAGON roars nearby!');
                 this.audio.playDragonRoar();
-                console.log('Dragon detected nearby');
             }
         }
         
@@ -672,7 +677,6 @@ class DnDGame {
                 this.isAdjacent(px, py, 'south', pit.x, pit.y) ||
                 this.isAdjacent(px, py, 'west', pit.x, pit.y)) {
                 pitNearby = true;
-                console.log(`Pit detected nearby at ${this.getCoordinate(pit.x, pit.y)}`);
                 break;
             }
         }
@@ -688,7 +692,6 @@ class DnDGame {
                 this.isAdjacent(px, py, 'south', bat.x, bat.y) ||
                 this.isAdjacent(px, py, 'west', bat.x, bat.y)) {
                 batNearby = true;
-                console.log(`Bat detected nearby at ${this.getCoordinate(bat.x, bat.y)}`);
                 break;
             }
         }
@@ -696,9 +699,6 @@ class DnDGame {
         if (batNearby) {
             warnings.push('🦇 You hear flapping wings...');
         }
-        
-        console.log(`Warnings array: ${JSON.stringify(warnings)}`);
-        console.log(`Final message: ${flightMessage}${warnings.length > 0 ? ' | ' + warnings.join(' | ') : ''}`);
         
         if (warnings.length > 0) {
             this.showMessage(`${flightMessage} | ${warnings.join(' | ')}`);
@@ -711,8 +711,6 @@ class DnDGame {
         const px = this.player.x;
         const py = this.player.y;
         let warnings = [];
-        
-        console.log(`checkProximity called at position (${px}, ${py}) = ${this.getCoordinate(px, py)}, pickupMessage: ${pickupMessage}`);
         
         if (this.dragon.alive) {
             let dragonNearby = false;
@@ -727,7 +725,6 @@ class DnDGame {
             if (dragonNearby) {
                 warnings.push('🐉 DRAGON roars nearby!');
                 this.audio.playDragonRoar();
-                console.log('Dragon detected nearby');
             }
         }
         
@@ -738,7 +735,6 @@ class DnDGame {
                 this.isAdjacent(px, py, 'south', pit.x, pit.y) ||
                 this.isAdjacent(px, py, 'west', pit.x, pit.y)) {
                 pitNearby = true;
-                console.log(`Pit detected nearby at ${this.getCoordinate(pit.x, pit.y)}`);
                 break;
             }
         }
@@ -754,7 +750,6 @@ class DnDGame {
                 this.isAdjacent(px, py, 'south', bat.x, bat.y) ||
                 this.isAdjacent(px, py, 'west', bat.x, bat.y)) {
                 batNearby = true;
-                console.log(`Bat detected nearby at ${this.getCoordinate(bat.x, bat.y)}`);
                 break;
             }
         }
@@ -762,8 +757,6 @@ class DnDGame {
         if (batNearby) {
             warnings.push(`🦇 You hear flapping wings...`);
         }
-        
-        console.log(`Warnings array: ${JSON.stringify(warnings)}`);
         
         // Combine pickup message with proximity warnings
         if (pickupMessage) {
@@ -811,16 +804,21 @@ class DnDGame {
         this.shootingMode = true;
         this.showMessage('🏹 Select a direction to shoot! (or ESC to cancel)');
         this.updateButtonStates();
+        this.renderDungeon(); // Re-render to show shooting pose
     }
     
     cancelShoot() {
         this.shootingMode = false;
         this.showMessage('Shooting cancelled.');
         this.updateButtonStates();
+        this.renderDungeon(); // Re-render to show standing pose
     }
     
     shootArrow(direction) {
         if (!this.gameActive || !this.shootingMode) return;
+        
+        // Update facing direction for shooting
+        this.player.facing = direction;
         
         this.shootingMode = false;
         this.player.hasArrow = false;
@@ -1002,20 +1000,343 @@ class DnDGame {
         const centerX = this.player.x * cellWidth + cellWidth / 2;
         const centerY = this.player.y * cellHeight + cellHeight / 2;
         
-        // Draw player circle
+        // Draw player sprite with current animation state
+        this.drawPlayerSprite(ctx, centerX, centerY);
+    }
+    
+    drawPlayerSprite(ctx, x, y) {
         ctx.fillStyle = '#00ff00';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw direction indicator (arrow pointing north)
         ctx.strokeStyle = '#00ff00';
         ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Get current facing direction (default to north)
+        const direction = this.player.facing || 'north';
+        
+        // Draw based on animation state
+        if (this.shootingMode) {
+            this.drawArcherShooting(ctx, x, y, direction);
+        } else {
+            this.drawArcherStanding(ctx, x, y, direction);
+        }
+    }
+    
+    drawArcherStanding(ctx, x, y, direction) {
+        switch(direction) {
+            case 'north':
+                this.drawArcherNorth(ctx, x, y, false);
+                break;
+            case 'south':
+                this.drawArcherSouth(ctx, x, y, false);
+                break;
+            case 'east':
+                this.drawArcherEast(ctx, x, y, false);
+                break;
+            case 'west':
+                this.drawArcherWest(ctx, x, y, false);
+                break;
+        }
+    }
+    
+    drawArcherShooting(ctx, x, y, direction) {
+        switch(direction) {
+            case 'north':
+                this.drawArcherNorth(ctx, x, y, true);
+                break;
+            case 'south':
+                this.drawArcherSouth(ctx, x, y, true);
+                break;
+            case 'east':
+                this.drawArcherEast(ctx, x, y, true);
+                break;
+            case 'west':
+                this.drawArcherWest(ctx, x, y, true);
+                break;
+        }
+    }
+    
+    // North-facing archer
+    drawArcherNorth(ctx, x, y, shooting) {
+        // Head
         ctx.beginPath();
-        ctx.moveTo(centerX, centerY - 12);
-        ctx.lineTo(centerX - 5, centerY - 7);
-        ctx.moveTo(centerX, centerY - 12);
-        ctx.lineTo(centerX + 5, centerY - 7);
+        ctx.arc(x, y - 8, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Body
+        ctx.beginPath();
+        ctx.moveTo(x, y - 4);
+        ctx.lineTo(x, y + 6);
+        ctx.stroke();
+        
+        if (shooting) {
+            // Arms raised, holding bow
+            // Left arm extended
+            ctx.beginPath();
+            ctx.moveTo(x, y - 2);
+            ctx.lineTo(x - 7, y - 6);
+            ctx.stroke();
+            
+            // Right arm pulling string
+            ctx.beginPath();
+            ctx.moveTo(x, y - 2);
+            ctx.lineTo(x + 5, y - 3);
+            ctx.stroke();
+            
+            // Bow
+            ctx.beginPath();
+            ctx.arc(x - 7, y - 6, 4, -Math.PI * 0.7, -Math.PI * 0.3, false);
+            ctx.stroke();
+            
+            // Arrow
+            ctx.beginPath();
+            ctx.moveTo(x - 7, y - 6);
+            ctx.lineTo(x - 7, y - 12);
+            ctx.stroke();
+            
+            // Arrowhead
+            ctx.beginPath();
+            ctx.moveTo(x - 7, y - 12);
+            ctx.lineTo(x - 8, y - 10);
+            ctx.moveTo(x - 7, y - 12);
+            ctx.lineTo(x - 6, y - 10);
+            ctx.stroke();
+        } else {
+            // Arms at sides with bow
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - 6, y + 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 6, y + 2);
+            ctx.stroke();
+            
+            // Bow on back
+            ctx.beginPath();
+            ctx.arc(x - 4, y - 1, 3, Math.PI * 0.3, Math.PI * 0.7);
+            ctx.stroke();
+        }
+        
+        // Legs
+        ctx.beginPath();
+        ctx.moveTo(x, y + 6);
+        ctx.lineTo(x - 3, y + 12);
+        ctx.moveTo(x, y + 6);
+        ctx.lineTo(x + 3, y + 12);
+        ctx.stroke();
+    }
+    
+    // South-facing archer
+    drawArcherSouth(ctx, x, y, shooting) {
+        // Head
+        ctx.beginPath();
+        ctx.arc(x, y - 8, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Body
+        ctx.beginPath();
+        ctx.moveTo(x, y - 4);
+        ctx.lineTo(x, y + 6);
+        ctx.stroke();
+        
+        if (shooting) {
+            // Arms raised, holding bow
+            ctx.beginPath();
+            ctx.moveTo(x, y - 2);
+            ctx.lineTo(x - 7, y - 4);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y - 2);
+            ctx.lineTo(x + 5, y - 2);
+            ctx.stroke();
+            
+            // Bow
+            ctx.beginPath();
+            ctx.arc(x - 7, y - 4, 4, Math.PI * 0.3, Math.PI * 0.7, false);
+            ctx.stroke();
+            
+            // Arrow pointing down
+            ctx.beginPath();
+            ctx.moveTo(x - 7, y - 4);
+            ctx.lineTo(x - 7, y + 4);
+            ctx.stroke();
+            
+            // Arrowhead
+            ctx.beginPath();
+            ctx.moveTo(x - 7, y + 4);
+            ctx.lineTo(x - 8, y + 2);
+            ctx.moveTo(x - 7, y + 4);
+            ctx.lineTo(x - 6, y + 2);
+            ctx.stroke();
+        } else {
+            // Arms at sides
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - 6, y + 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 6, y + 2);
+            ctx.stroke();
+            
+            // Bow visible
+            ctx.beginPath();
+            ctx.arc(x + 4, y, 3, -Math.PI * 0.3, Math.PI * 0.3);
+            ctx.stroke();
+        }
+        
+        // Legs
+        ctx.beginPath();
+        ctx.moveTo(x, y + 6);
+        ctx.lineTo(x - 3, y + 12);
+        ctx.moveTo(x, y + 6);
+        ctx.lineTo(x + 3, y + 12);
+        ctx.stroke();
+    }
+    
+    // East-facing archer
+    drawArcherEast(ctx, x, y, shooting) {
+        // Head (profile)
+        ctx.beginPath();
+        ctx.arc(x + 2, y - 8, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Body
+        ctx.beginPath();
+        ctx.moveTo(x + 2, y - 4);
+        ctx.lineTo(x + 2, y + 6);
+        ctx.stroke();
+        
+        if (shooting) {
+            // Left arm extended forward
+            ctx.beginPath();
+            ctx.moveTo(x + 2, y - 2);
+            ctx.lineTo(x + 10, y - 4);
+            ctx.stroke();
+            
+            // Right arm pulling string back
+            ctx.beginPath();
+            ctx.moveTo(x + 2, y - 2);
+            ctx.lineTo(x - 4, y - 1);
+            ctx.stroke();
+            
+            // Bow
+            ctx.beginPath();
+            ctx.arc(x + 10, y - 4, 4, -Math.PI * 0.5, Math.PI * 0.5, false);
+            ctx.stroke();
+            
+            // Arrow pointing right
+            ctx.beginPath();
+            ctx.moveTo(x - 2, y - 2);
+            ctx.lineTo(x + 10, y - 4);
+            ctx.stroke();
+            
+            // Arrowhead
+            ctx.beginPath();
+            ctx.moveTo(x + 10, y - 4);
+            ctx.lineTo(x + 8, y - 5);
+            ctx.moveTo(x + 10, y - 4);
+            ctx.lineTo(x + 8, y - 3);
+            ctx.stroke();
+        } else {
+            // Arms at sides
+            ctx.beginPath();
+            ctx.moveTo(x + 2, y);
+            ctx.lineTo(x + 7, y + 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x + 2, y);
+            ctx.lineTo(x - 3, y + 1);
+            ctx.stroke();
+            
+            // Bow on back
+            ctx.beginPath();
+            ctx.arc(x, y, 3, -Math.PI * 0.3, Math.PI * 0.3);
+            ctx.stroke();
+        }
+        
+        // Legs
+        ctx.beginPath();
+        ctx.moveTo(x + 2, y + 6);
+        ctx.lineTo(x, y + 12);
+        ctx.moveTo(x + 2, y + 6);
+        ctx.lineTo(x + 4, y + 12);
+        ctx.stroke();
+    }
+    
+    // West-facing archer
+    drawArcherWest(ctx, x, y, shooting) {
+        // Head (profile)
+        ctx.beginPath();
+        ctx.arc(x - 2, y - 8, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Body
+        ctx.beginPath();
+        ctx.moveTo(x - 2, y - 4);
+        ctx.lineTo(x - 2, y + 6);
+        ctx.stroke();
+        
+        if (shooting) {
+            // Left arm extended forward
+            ctx.beginPath();
+            ctx.moveTo(x - 2, y - 2);
+            ctx.lineTo(x - 10, y - 4);
+            ctx.stroke();
+            
+            // Right arm pulling string back
+            ctx.beginPath();
+            ctx.moveTo(x - 2, y - 2);
+            ctx.lineTo(x + 4, y - 1);
+            ctx.stroke();
+            
+            // Bow
+            ctx.beginPath();
+            ctx.arc(x - 10, y - 4, 4, Math.PI * 0.5, Math.PI * 1.5, false);
+            ctx.stroke();
+            
+            // Arrow pointing left
+            ctx.beginPath();
+            ctx.moveTo(x + 2, y - 2);
+            ctx.lineTo(x - 10, y - 4);
+            ctx.stroke();
+            
+            // Arrowhead
+            ctx.beginPath();
+            ctx.moveTo(x - 10, y - 4);
+            ctx.lineTo(x - 8, y - 5);
+            ctx.moveTo(x - 10, y - 4);
+            ctx.lineTo(x - 8, y - 3);
+            ctx.stroke();
+        } else {
+            // Arms at sides
+            ctx.beginPath();
+            ctx.moveTo(x - 2, y);
+            ctx.lineTo(x - 7, y + 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x - 2, y);
+            ctx.lineTo(x + 3, y + 1);
+            ctx.stroke();
+            
+            // Bow on back
+            ctx.beginPath();
+            ctx.arc(x, y, 3, Math.PI * 0.7, Math.PI * 1.3);
+            ctx.stroke();
+        }
+        
+        // Legs
+        ctx.beginPath();
+        ctx.moveTo(x - 2, y + 6);
+        ctx.lineTo(x - 4, y + 12);
+        ctx.moveTo(x - 2, y + 6);
+        ctx.lineTo(x, y + 12);
         ctx.stroke();
     }
     
