@@ -438,7 +438,9 @@ class DnDGame {
         this.updateDisplay();
         this.renderDungeon();
         this.updateButtonStates();
-        this.showMessage('Find the magical arrow, then slay the dragon!');
+        
+        // Check for initial warnings at starting position
+        this.checkProximity('Find the magical arrow, then slay the dragon!');
         
         this.audio.startBackgroundMusic();
     }
@@ -599,7 +601,10 @@ class DnDGame {
         do {
             newX = Math.floor(Math.random() * this.gridSize);
             newY = Math.floor(Math.random() * this.gridSize);
-        } while (newX === this.player.x && newY === this.player.y);
+        } while (
+            (newX === this.player.x && newY === this.player.y) || // Not same position
+            this.isBatAt(newX, newY) // Not on another bat
+        );
         
         const oldCoord = this.getCoordinate(this.player.x, this.player.y);
         this.player.x = newX;

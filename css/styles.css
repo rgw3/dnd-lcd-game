@@ -135,12 +135,12 @@ header h1 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    gap: 2px;
 }
 
 .dpad-middle {
     display: flex;
-    gap: 30px;
+    gap: 15px;
     align-items: center;
 }
 
@@ -175,9 +175,9 @@ button:active {
 
 /* Directional buttons - triangular */
 .dir-btn {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
+    width: 35px;
+    height: 35px;
+    font-size: 1.1rem;
     padding: 0;
     display: flex;
     align-items: center;
