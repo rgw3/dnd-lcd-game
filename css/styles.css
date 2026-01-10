@@ -120,15 +120,34 @@ header h1 {
    Controls
    =================================== */
 .controls {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
     margin-bottom: 20px;
 }
 
-.button-group {
+.controls-container {
     display: flex;
     justify-content: center;
+    align-items: center;
+    gap: 40px;
+}
+
+/* Directional pad (D-pad) */
+.dpad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.dpad-middle {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+}
+
+/* Action buttons column */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
 }
 
@@ -136,14 +155,12 @@ button {
     font-family: 'Courier New', monospace;
     font-size: 1rem;
     font-weight: bold;
-    padding: 12px 24px;
     border: 2px solid #00ff00;
     background-color: #0a0a0a;
     color: #00ff00;
     border-radius: 5px;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-width: 100px;
 }
 
 button:hover {
@@ -156,12 +173,22 @@ button:active {
     transform: scale(0.95);
 }
 
+/* Directional buttons - triangular */
 .dir-btn {
-    min-width: 120px;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: unset;
 }
 
+/* Action buttons */
 .action-btn {
     min-width: 140px;
+    padding: 12px 24px;
     background-color: #002200;
 }
 
@@ -327,10 +354,25 @@ button:active {
         grid-template-columns: repeat(2, 1fr);
     }
     
-    button {
+    .controls-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .dir-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 1.3rem;
+    }
+    
+    .dpad-middle {
+        gap: 25px;
+    }
+    
+    .action-btn {
+        min-width: 120px;
         font-size: 0.9rem;
         padding: 10px 16px;
-        min-width: 80px;
     }
     
     .modal-content {

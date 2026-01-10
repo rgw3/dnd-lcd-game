@@ -41,20 +41,23 @@
         </div>
 
         <div class="controls">
-            <div class="button-group">
-                <button id="btn-north" class="dir-btn">↑ North</button>
-            </div>
-            <div class="button-group">
-                <button id="btn-west" class="dir-btn">← West</button>
-                <button id="btn-shoot" class="action-btn">SHOOT</button>
-                <button id="btn-east" class="dir-btn">→ East</button>
-            </div>
-            <div class="button-group">
-                <button id="btn-south" class="dir-btn">↓ South</button>
-            </div>
-            <div class="button-group">
-                <button id="btn-new-game" class="action-btn">New Game</button>
-                <button id="btn-how-to-play" class="action-btn">How to Play</button>
+            <div class="controls-container">
+                <!-- Directional pad on the left -->
+                <div class="dpad">
+                    <button id="btn-north" class="dir-btn dir-north" aria-label="North">▲</button>
+                    <div class="dpad-middle">
+                        <button id="btn-west" class="dir-btn dir-west" aria-label="West">◀</button>
+                        <button id="btn-east" class="dir-btn dir-east" aria-label="East">▶</button>
+                    </div>
+                    <button id="btn-south" class="dir-btn dir-south" aria-label="South">▼</button>
+                </div>
+                
+                <!-- Action buttons on the right -->
+                <div class="action-buttons">
+                    <button id="btn-shoot" class="action-btn">SHOOT</button>
+                    <button id="btn-new-game" class="action-btn">New Game</button>
+                    <button id="btn-how-to-play" class="action-btn">How to Play</button>
+                </div>
             </div>
         </div>
 
@@ -89,13 +92,13 @@
             <div class="instructions-section">
                 <h3>⚔️ Items to Find</h3>
                 <p><strong>🏹 Magical Arrow:</strong> You need this to kill the dragon. Without it, you're defenseless!</p>
-                <p><strong>🪢 Rope:</strong> Saves you from falling into pits. Very useful for exploration!</p>
+                <p><strong>🪢 Rope:</strong> Saves you from ONE pit fall. After use, the rope is consumed and you're vulnerable to pits again!</p>
             </div>
 
             <div class="instructions-section">
                 <h3>⚠️ Dangers</h3>
                 <p><strong>🐉 Dragon:</strong> Instant death if you walk into it. When adjacent, you'll hear a roar and see warning messages. Shoot it with the arrow to win!</p>
-                <p><strong>🕳️ Pits (12 total):</strong> Fall in without a rope and you die. With a rope, you're saved! You'll feel a breeze when a pit is nearby.</p>
+                <p><strong>🕳️ Pits (12 total):</strong> Fall in without a rope and you die. With a rope, you're saved but the rope is consumed! You'll feel a breeze when a pit is nearby.</p>
                 <p><strong>🦇 Bats (3 total):</strong> Grab you and fly you to a random location - then disappear! Could drop you anywhere - even into danger! You'll hear flapping wings when nearby.</p>
             </div>
 
@@ -116,7 +119,8 @@
                 <p>• Dragon roar = dragon is one square away</p>
                 <p>• Breeze = pit is one square away</p>
                 <p>• Flapping wings = bat is one square away</p>
-                <p>• Getting the rope first makes exploring safer</p>
+                <p>• The rope only saves you ONCE - use it wisely!</p>
+                <p>• Getting the rope early gives you one safety net</p>
                 <p>• Score is based on how fast you win (1 point per 5 seconds)</p>
             </div>
 
