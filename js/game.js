@@ -878,7 +878,7 @@ class DnDGame {
     }
     
     // ===================================
-    // Canvas Rendering
+    // Canvas Rendering - NEW GRID VIEW
     // ===================================
     
     renderDungeon() {
@@ -890,100 +890,176 @@ class DnDGame {
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, width, height);
         
-        const centerX = width / 2;
-        const centerY = height / 2;
+        // Draw grid lines
+        this.drawGrid(ctx);
         
-        // Draw stone crossroads
-        this.drawStoneCrossroads(ctx, centerX, centerY);
+        // Draw row/column labels
+        this.drawLabels(ctx);
         
-        // Draw player marker (circle)
+        // Highlight current cell
+        this.highlightCurrentCell(ctx);
+        
+        // Draw adjacent warnings (entities near player)
+        this.drawAdjacentWarnings(ctx);
+        
+        // Draw player (on top of everything)
+        this.drawPlayer(ctx);
+    }
+    
+    drawGrid(ctx) {
+        const cellWidth = 40;
+        const cellHeight = 30;
+        
+        // Draw grid lines
+        ctx.strokeStyle = '#006600';
+        ctx.lineWidth = 1;
+        
+        // Vertical lines (columns)
+        for (let x = 0; x <= 10; x++) {
+            ctx.beginPath();
+            ctx.moveTo(x * cellWidth, 0);
+            ctx.lineTo(x * cellWidth, 300);
+            ctx.stroke();
+        }
+        
+        // Horizontal lines (rows)
+        for (let y = 0; y <= 10; y++) {
+            ctx.beginPath();
+            ctx.moveTo(0, y * cellHeight);
+            ctx.lineTo(400, y * cellHeight);
+            ctx.stroke();
+        }
+    }
+    
+    drawLabels(ctx) {
+        const cellWidth = 40;
+        const cellHeight = 30;
+        
+        ctx.fillStyle = '#00ff00';
+        ctx.font = 'bold 10px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Column labels (0-9) - top of grid
+        for (let x = 0; x < 10; x++) {
+            ctx.fillText(x.toString(), x * cellWidth + cellWidth / 2, 10);
+        }
+        
+        // Row labels (A-J) - left of grid
+        ctx.textAlign = 'left';
+        for (let y = 0; y < 10; y++) {
+            ctx.fillText(this.rows[y], 5, y * cellHeight + cellHeight / 2);
+        }
+    }
+    
+    highlightCurrentCell(ctx) {
+        const cellWidth = 40;
+        const cellHeight = 30;
+        
+        // Highlight player's current cell
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
+        ctx.fillRect(
+            this.player.x * cellWidth,
+            this.player.y * cellHeight,
+            cellWidth,
+            cellHeight
+        );
+        
+        // Border around current cell
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(
+            this.player.x * cellWidth,
+            this.player.y * cellHeight,
+            cellWidth,
+            cellHeight
+        );
+    }
+    
+    drawPlayer(ctx) {
+        const cellWidth = 40;
+        const cellHeight = 30;
+        
+        // Calculate center of player's cell
+        const centerX = this.player.x * cellWidth + cellWidth / 2;
+        const centerY = this.player.y * cellHeight + cellHeight / 2;
+        
+        // Draw player circle
         ctx.fillStyle = '#00ff00';
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
         ctx.fill();
         
-        // Draw player direction indicator (small arrow pointing north)
+        // Draw direction indicator (arrow pointing north)
         ctx.strokeStyle = '#00ff00';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(centerX, centerY - 15);
-        ctx.lineTo(centerX - 5, centerY - 10);
-        ctx.moveTo(centerX, centerY - 15);
-        ctx.lineTo(centerX + 5, centerY - 10);
+        ctx.moveTo(centerX, centerY - 10);
+        ctx.lineTo(centerX - 4, centerY - 6);
+        ctx.moveTo(centerX, centerY - 10);
+        ctx.lineTo(centerX + 4, centerY - 6);
         ctx.stroke();
     }
     
-    drawStoneCrossroads(ctx, cx, cy) {
-        const roomSize = 120;
-        const openingWidth = 50;
-        const corridorLength = 30;
-        const wallThickness = 10;
+    drawAdjacentWarnings(ctx) {
+        const cellWidth = 40;
+        const cellHeight = 30;
+        const px = this.player.x;
+        const py = this.player.y;
         
-        const halfRoom = roomSize / 2;
-        const halfOpening = openingWidth / 2;
+        // Check all 4 adjacent cells
+        const adjacentCells = [
+            { x: px, y: (py - 1 + this.gridSize) % this.gridSize, dir: 'N' },      // North
+            { x: (px + 1) % this.gridSize, y: py, dir: 'E' },                      // East
+            { x: px, y: (py + 1) % this.gridSize, dir: 'S' },                      // South
+            { x: (px - 1 + this.gridSize) % this.gridSize, y: py, dir: 'W' }      // West
+        ];
         
-        // Helper to draw a wall segment with texture
-        const drawWall = (x, y, w, h) => {
-            // Fill
-            ctx.fillStyle = '#001100';
-            ctx.fillRect(x, y, w, h);
+        ctx.font = 'bold 16px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        for (const cell of adjacentCells) {
+            const centerX = cell.x * cellWidth + cellWidth / 2;
+            const centerY = cell.y * cellHeight + cellHeight / 2;
             
-            // Outline
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, w, h);
-            
-            // Stone texture
-            ctx.strokeStyle = '#006600';
-            ctx.lineWidth = 1;
-            for (let i = 8; i < Math.max(w, h); i += 10) {
-                if (w > h) {
-                    // Horizontal wall - vertical lines
-                    ctx.beginPath();
-                    ctx.moveTo(x + i, y);
-                    ctx.lineTo(x + i, y + h);
-                    ctx.stroke();
-                } else {
-                    // Vertical wall - horizontal lines
-                    ctx.beginPath();
-                    ctx.moveTo(x, y + i);
-                    ctx.lineTo(x + w, y + i);
-                    ctx.stroke();
-                }
+            // Check for dragon
+            if (this.dragon.alive && cell.x === this.dragon.x && cell.y === this.dragon.y) {
+                ctx.fillStyle = '#ff0000';
+                ctx.fillText('🐉', centerX, centerY);
             }
-        };
-        
-        // NORTH
-        // North wall segments
-        drawWall(cx - halfRoom, cy - halfRoom, halfRoom - halfOpening, wallThickness);
-        drawWall(cx + halfOpening, cy - halfRoom, halfRoom - halfOpening, wallThickness);
-        // North corridor
-        drawWall(cx - halfOpening, cy - halfRoom - corridorLength, wallThickness, corridorLength);
-        drawWall(cx + halfOpening - wallThickness, cy - halfRoom - corridorLength, wallThickness, corridorLength);
-        
-        // SOUTH
-        // South wall segments
-        drawWall(cx - halfRoom, cy + halfRoom - wallThickness, halfRoom - halfOpening, wallThickness);
-        drawWall(cx + halfOpening, cy + halfRoom - wallThickness, halfRoom - halfOpening, wallThickness);
-        // South corridor
-        drawWall(cx - halfOpening, cy + halfRoom, wallThickness, corridorLength);
-        drawWall(cx + halfOpening - wallThickness, cy + halfRoom, wallThickness, corridorLength);
-        
-        // WEST
-        // West wall segments
-        drawWall(cx - halfRoom, cy - halfRoom, wallThickness, halfRoom - halfOpening);
-        drawWall(cx - halfRoom, cy + halfOpening, wallThickness, halfRoom - halfOpening);
-        // West corridor
-        drawWall(cx - halfRoom - corridorLength, cy - halfOpening, corridorLength, wallThickness);
-        drawWall(cx - halfRoom - corridorLength, cy + halfOpening - wallThickness, corridorLength, wallThickness);
-        
-        // EAST
-        // East wall segments
-        drawWall(cx + halfRoom - wallThickness, cy - halfRoom, wallThickness, halfRoom - halfOpening);
-        drawWall(cx + halfRoom - wallThickness, cy + halfOpening, wallThickness, halfRoom - halfOpening);
-        // East corridor
-        drawWall(cx + halfRoom, cy - halfOpening, corridorLength, wallThickness);
-        drawWall(cx + halfRoom, cy + halfOpening - wallThickness, corridorLength, wallThickness);
+            
+            // Check for pit
+            else if (this.isPitAt(cell.x, cell.y)) {
+                ctx.fillStyle = '#ffaa00';
+                ctx.fillText('⚠', centerX, centerY);
+            }
+            
+            // Check for bat
+            else if (this.isBatAt(cell.x, cell.y)) {
+                ctx.fillStyle = '#aa00ff';
+                ctx.fillText('🦇', centerX, centerY);
+            }
+            
+            // Check for arrow (if not collected and not in flight)
+            else if (!this.arrow.collected && !this.arrow.inFlight && 
+                     cell.x === this.arrow.x && cell.y === this.arrow.y) {
+                ctx.fillStyle = '#00ffff';
+                ctx.fillText('🏹', centerX, centerY);
+            }
+            
+            // Check for arrow (if in flight after missed shot)
+            else if (this.arrow.inFlight && cell.x === this.arrow.x && cell.y === this.arrow.y) {
+                ctx.fillStyle = '#00ffff';
+                ctx.fillText('🏹', centerX, centerY);
+            }
+            
+            // Check for rope
+            else if (!this.rope.collected && cell.x === this.rope.x && cell.y === this.rope.y) {
+                ctx.fillStyle = '#ffff00';
+                ctx.fillText('🪢', centerX, centerY);
+            }
+        }
     }
     
     // ===================================
