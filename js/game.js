@@ -886,22 +886,23 @@ class DnDGame {
         const width = 400;
         const height = 300;
         
+        // Clear canvas
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, width, height);
-        
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 2;
         
         const centerX = width / 2;
         const centerY = height / 2;
         
-        this.drawIsometricCrossroads(ctx, centerX, centerY);
+        // Draw stone crossroads
+        this.drawStoneCrossroads(ctx, centerX, centerY);
         
+        // Draw player marker (circle)
         ctx.fillStyle = '#00ff00';
         ctx.beginPath();
         ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
         ctx.fill();
         
+        // Draw player direction indicator (small arrow pointing north)
         ctx.strokeStyle = '#00ff00';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -912,45 +913,77 @@ class DnDGame {
         ctx.stroke();
     }
     
-    drawIsometricCrossroads(ctx, cx, cy) {
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 2;
+    drawStoneCrossroads(ctx, cx, cy) {
+        const roomSize = 120;
+        const openingWidth = 50;
+        const corridorLength = 30;
+        const wallThickness = 10;
         
-        ctx.beginPath();
-        ctx.moveTo(cx - 30, cy - 20);
-        ctx.lineTo(cx - 20, cy - 60);
-        ctx.moveTo(cx + 30, cy - 20);
-        ctx.lineTo(cx + 20, cy - 60);
-        ctx.stroke();
+        const halfRoom = roomSize / 2;
+        const halfOpening = openingWidth / 2;
         
-        ctx.beginPath();
-        ctx.moveTo(cx - 30, cy + 20);
-        ctx.lineTo(cx - 40, cy + 60);
-        ctx.moveTo(cx + 30, cy + 20);
-        ctx.lineTo(cx + 40, cy + 60);
-        ctx.stroke();
+        // Helper to draw a wall segment with texture
+        const drawWall = (x, y, w, h) => {
+            // Fill
+            ctx.fillStyle = '#001100';
+            ctx.fillRect(x, y, w, h);
+            
+            // Outline
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, h);
+            
+            // Stone texture
+            ctx.strokeStyle = '#006600';
+            ctx.lineWidth = 1;
+            for (let i = 8; i < Math.max(w, h); i += 10) {
+                if (w > h) {
+                    // Horizontal wall - vertical lines
+                    ctx.beginPath();
+                    ctx.moveTo(x + i, y);
+                    ctx.lineTo(x + i, y + h);
+                    ctx.stroke();
+                } else {
+                    // Vertical wall - horizontal lines
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + i);
+                    ctx.lineTo(x + w, y + i);
+                    ctx.stroke();
+                }
+            }
+        };
         
-        ctx.beginPath();
-        ctx.moveTo(cx - 30, cy - 20);
-        ctx.lineTo(cx - 70, cy - 10);
-        ctx.moveTo(cx - 30, cy + 20);
-        ctx.lineTo(cx - 70, cy + 10);
-        ctx.stroke();
+        // NORTH
+        // North wall segments
+        drawWall(cx - halfRoom, cy - halfRoom, halfRoom - halfOpening, wallThickness);
+        drawWall(cx + halfOpening, cy - halfRoom, halfRoom - halfOpening, wallThickness);
+        // North corridor
+        drawWall(cx - halfOpening, cy - halfRoom - corridorLength, wallThickness, corridorLength);
+        drawWall(cx + halfOpening - wallThickness, cy - halfRoom - corridorLength, wallThickness, corridorLength);
         
-        ctx.beginPath();
-        ctx.moveTo(cx + 30, cy - 20);
-        ctx.lineTo(cx + 70, cy - 10);
-        ctx.moveTo(cx + 30, cy + 20);
-        ctx.lineTo(cx + 70, cy + 10);
-        ctx.stroke();
+        // SOUTH
+        // South wall segments
+        drawWall(cx - halfRoom, cy + halfRoom - wallThickness, halfRoom - halfOpening, wallThickness);
+        drawWall(cx + halfOpening, cy + halfRoom - wallThickness, halfRoom - halfOpening, wallThickness);
+        // South corridor
+        drawWall(cx - halfOpening, cy + halfRoom, wallThickness, corridorLength);
+        drawWall(cx + halfOpening - wallThickness, cy + halfRoom, wallThickness, corridorLength);
         
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - 20);
-        ctx.lineTo(cx + 30, cy);
-        ctx.lineTo(cx, cy + 20);
-        ctx.lineTo(cx - 30, cy);
-        ctx.closePath();
-        ctx.stroke();
+        // WEST
+        // West wall segments
+        drawWall(cx - halfRoom, cy - halfRoom, wallThickness, halfRoom - halfOpening);
+        drawWall(cx - halfRoom, cy + halfOpening, wallThickness, halfRoom - halfOpening);
+        // West corridor
+        drawWall(cx - halfRoom - corridorLength, cy - halfOpening, corridorLength, wallThickness);
+        drawWall(cx - halfRoom - corridorLength, cy + halfOpening - wallThickness, corridorLength, wallThickness);
+        
+        // EAST
+        // East wall segments
+        drawWall(cx + halfRoom - wallThickness, cy - halfRoom, wallThickness, halfRoom - halfOpening);
+        drawWall(cx + halfRoom - wallThickness, cy + halfOpening, wallThickness, halfRoom - halfOpening);
+        // East corridor
+        drawWall(cx + halfRoom, cy - halfOpening, corridorLength, wallThickness);
+        drawWall(cx + halfRoom, cy + halfOpening - wallThickness, corridorLength, wallThickness);
     }
     
     // ===================================
