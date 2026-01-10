@@ -228,11 +228,6 @@ class DnDGame {
         this.hasRopeDisplay = document.getElementById('has-rope');
         this.messageDisplay = document.getElementById('message-display');
         
-        this.northIndicator = document.getElementById('north-indicator');
-        this.eastIndicator = document.getElementById('east-indicator');
-        this.southIndicator = document.getElementById('south-indicator');
-        this.westIndicator = document.getElementById('west-indicator');
-        
         this.btnNorth = document.getElementById('btn-north');
         this.btnEast = document.getElementById('btn-east');
         this.btnSouth = document.getElementById('btn-south');

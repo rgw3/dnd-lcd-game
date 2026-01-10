@@ -126,76 +126,6 @@ header h1 {
 }
 
 /* ===================================
-   Direction Indicators
-   =================================== */
-.direction-indicators {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 200px;
-    height: 200px;
-    pointer-events: none;
-}
-
-.indicator {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    background-color: #1a1a1a;
-    border: 2px solid #333;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #333;
-    transition: all 0.3s ease;
-}
-
-.indicator.active {
-    background-color: #ff0000;
-    border-color: #ff0000;
-    color: #fff;
-    box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
-    animation: pulse 1s infinite;
-}
-
-.indicator.north {
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.indicator.east {
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.indicator.south {
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.indicator.west {
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-/* ===================================
    Controls
    =================================== */
 .controls {
@@ -290,16 +220,5 @@ button:active {
         font-size: 0.9rem;
         padding: 10px 16px;
         min-width: 80px;
-    }
-    
-    .direction-indicators {
-        width: 150px;
-        height: 150px;
-    }
-    
-    .indicator {
-        width: 30px;
-        height: 30px;
-        font-size: 1rem;
     }
 }
