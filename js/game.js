@@ -234,6 +234,12 @@ class DnDGame {
         this.btnWest = document.getElementById('btn-west');
         this.btnShoot = document.getElementById('btn-shoot');
         this.btnNewGame = document.getElementById('btn-new-game');
+        
+        // Modal elements
+        this.modal = document.getElementById('instructions-modal');
+        this.btnHowToPlay = document.getElementById('btn-how-to-play');
+        this.closeButton = document.querySelector('.close-button');
+        this.modalCloseBtn = document.getElementById('modal-close-btn');
     }
     
     initializeCanvas() {
@@ -273,6 +279,18 @@ class DnDGame {
         this.btnNewGame.addEventListener('click', () => {
             this.audio.initialize();
             this.newGame();
+        });
+        
+        // Modal event listeners
+        this.btnHowToPlay.addEventListener('click', () => this.openModal());
+        this.closeButton.addEventListener('click', () => this.closeModal());
+        this.modalCloseBtn.addEventListener('click', () => this.closeModal());
+        
+        // Close modal when clicking outside of it
+        window.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.closeModal();
+            }
         });
         
         document.addEventListener('keydown', (e) => {
@@ -612,28 +630,17 @@ class DnDGame {
     }
     
     checkProximityAfterBat(teleportMessage) {
-        this.clearDirectionIndicators();
-        
         const px = this.player.x;
         const py = this.player.y;
         let warnings = [];
-        let dragonNearby = false;
         
         if (this.dragon.alive) {
-            if (this.isAdjacent(px, py, 'north', this.dragon.x, this.dragon.y)) {
-                this.northIndicator.classList.add('active');
-                dragonNearby = true;
-            }
-            if (this.isAdjacent(px, py, 'east', this.dragon.x, this.dragon.y)) {
-                this.eastIndicator.classList.add('active');
-                dragonNearby = true;
-            }
-            if (this.isAdjacent(px, py, 'south', this.dragon.x, this.dragon.y)) {
-                this.southIndicator.classList.add('active');
-                dragonNearby = true;
-            }
-            if (this.isAdjacent(px, py, 'west', this.dragon.x, this.dragon.y)) {
-                this.westIndicator.classList.add('active');
+            let dragonNearby = false;
+            
+            if (this.isAdjacent(px, py, 'north', this.dragon.x, this.dragon.y) ||
+                this.isAdjacent(px, py, 'east', this.dragon.x, this.dragon.y) ||
+                this.isAdjacent(px, py, 'south', this.dragon.x, this.dragon.y) ||
+                this.isAdjacent(px, py, 'west', this.dragon.x, this.dragon.y)) {
                 dragonNearby = true;
             }
             
@@ -681,34 +688,17 @@ class DnDGame {
     }
     
     checkProximity(pickupMessage = null) {
-        this.clearDirectionIndicators();
-        
         const px = this.player.x;
         const py = this.player.y;
         let warnings = [];
-        let dragonNearby = false;
         
         if (this.dragon.alive) {
-            const dragonDirections = [];
+            let dragonNearby = false;
             
-            if (this.isAdjacent(px, py, 'north', this.dragon.x, this.dragon.y)) {
-                this.northIndicator.classList.add('active');
-                dragonDirections.push('North');
-                dragonNearby = true;
-            }
-            if (this.isAdjacent(px, py, 'east', this.dragon.x, this.dragon.y)) {
-                this.eastIndicator.classList.add('active');
-                dragonDirections.push('East');
-                dragonNearby = true;
-            }
-            if (this.isAdjacent(px, py, 'south', this.dragon.x, this.dragon.y)) {
-                this.southIndicator.classList.add('active');
-                dragonDirections.push('South');
-                dragonNearby = true;
-            }
-            if (this.isAdjacent(px, py, 'west', this.dragon.x, this.dragon.y)) {
-                this.westIndicator.classList.add('active');
-                dragonDirections.push('West');
+            if (this.isAdjacent(px, py, 'north', this.dragon.x, this.dragon.y) ||
+                this.isAdjacent(px, py, 'east', this.dragon.x, this.dragon.y) ||
+                this.isAdjacent(px, py, 'south', this.dragon.x, this.dragon.y) ||
+                this.isAdjacent(px, py, 'west', this.dragon.x, this.dragon.y)) {
                 dragonNearby = true;
             }
             
@@ -718,43 +708,33 @@ class DnDGame {
             }
         }
         
-        const pitDirections = [];
+        let pitNearby = false;
         for (const pit of this.pits) {
-            if (this.isAdjacent(px, py, 'north', pit.x, pit.y)) {
-                if (!pitDirections.includes('North')) pitDirections.push('North');
-            }
-            if (this.isAdjacent(px, py, 'east', pit.x, pit.y)) {
-                if (!pitDirections.includes('East')) pitDirections.push('East');
-            }
-            if (this.isAdjacent(px, py, 'south', pit.x, pit.y)) {
-                if (!pitDirections.includes('South')) pitDirections.push('South');
-            }
-            if (this.isAdjacent(px, py, 'west', pit.x, pit.y)) {
-                if (!pitDirections.includes('West')) pitDirections.push('West');
+            if (this.isAdjacent(px, py, 'north', pit.x, pit.y) ||
+                this.isAdjacent(px, py, 'east', pit.x, pit.y) ||
+                this.isAdjacent(px, py, 'south', pit.x, pit.y) ||
+                this.isAdjacent(px, py, 'west', pit.x, pit.y)) {
+                pitNearby = true;
+                break;
             }
         }
         
-        if (pitDirections.length > 0) {
+        if (pitNearby) {
             warnings.push(`⚠️ You feel a breeze... pit nearby!`);
         }
         
-        const batDirections = [];
+        let batNearby = false;
         for (const bat of this.bats) {
-            if (this.isAdjacent(px, py, 'north', bat.x, bat.y)) {
-                if (!batDirections.includes('North')) batDirections.push('North');
-            }
-            if (this.isAdjacent(px, py, 'east', bat.x, bat.y)) {
-                if (!batDirections.includes('East')) batDirections.push('East');
-            }
-            if (this.isAdjacent(px, py, 'south', bat.x, bat.y)) {
-                if (!batDirections.includes('South')) batDirections.push('South');
-            }
-            if (this.isAdjacent(px, py, 'west', bat.x, bat.y)) {
-                if (!batDirections.includes('West')) batDirections.push('West');
+            if (this.isAdjacent(px, py, 'north', bat.x, bat.y) ||
+                this.isAdjacent(px, py, 'east', bat.x, bat.y) ||
+                this.isAdjacent(px, py, 'south', bat.x, bat.y) ||
+                this.isAdjacent(px, py, 'west', bat.x, bat.y)) {
+                batNearby = true;
+                break;
             }
         }
         
-        if (batDirections.length > 0) {
+        if (batNearby) {
             warnings.push(`🦇 You hear flapping wings...`);
         }
         
@@ -999,13 +979,6 @@ class DnDGame {
         return this.rows[y] + x;
     }
     
-    clearDirectionIndicators() {
-        this.northIndicator.classList.remove('active');
-        this.eastIndicator.classList.remove('active');
-        this.southIndicator.classList.remove('active');
-        this.westIndicator.classList.remove('active');
-    }
-    
     showMessage(message) {
         this.messageDisplay.textContent = message;
     }
@@ -1036,7 +1009,6 @@ class DnDGame {
         clearInterval(this.timerInterval);
         this.audio.stopBackgroundMusic();
         this.showMessage(message);
-        this.clearDirectionIndicators();
     }
     
     win() {
@@ -1049,8 +1021,19 @@ class DnDGame {
         this.score = Math.floor(elapsed / 5);
         this.scoreDisplay.textContent = this.score;
         
-        this.clearDirectionIndicators();
         this.showMessage(`🎉 VICTORY! You slayed the dragon! Score: ${this.score} 🎉`);
+    }
+    
+    // ===================================
+    // Modal Controls
+    // ===================================
+    
+    openModal() {
+        this.modal.style.display = 'block';
+    }
+    
+    closeModal() {
+        this.modal.style.display = 'none';
     }
 }
 
