@@ -21,14 +21,14 @@ class DnDGame {
         this.score = 0;
         this.startTime = null;
         this.timerInterval = null;
-        this.shootingMode = false; // Are we selecting a direction to shoot?
+        this.shootingMode = false;
         
         // Entity positions
         this.dragon = { x: -1, y: -1, alive: true };
         this.arrow = { x: -1, y: -1, collected: false, inFlight: false };
         this.rope = { x: -1, y: -1, collected: false };
-        this.pits = [];
-        this.bats = [];
+        this.pits = []; // Array of {x, y} positions
+        this.bats = []; // Will add in Phase 5
         
         // Initialize DOM elements
         this.initializeElements();
@@ -161,33 +161,50 @@ class DnDGame {
     }
     
     placeEntities() {
-        // Dragon - random position (not at player start)
-        do {
-            this.dragon.x = Math.floor(Math.random() * this.gridSize);
-            this.dragon.y = Math.floor(Math.random() * this.gridSize);
-        } while (this.dragon.x === 0 && this.dragon.y === 0);
+        const occupiedPositions = new Set();
+        occupiedPositions.add('0,0'); // Player start position
+        
+        // Helper function to get random unoccupied position
+        const getRandomPosition = () => {
+            let x, y;
+            do {
+                x = Math.floor(Math.random() * this.gridSize);
+                y = Math.floor(Math.random() * this.gridSize);
+            } while (occupiedPositions.has(`${x},${y}`));
+            occupiedPositions.add(`${x},${y}`);
+            return { x, y };
+        };
+        
+        // Dragon
+        const dragonPos = getRandomPosition();
+        this.dragon.x = dragonPos.x;
+        this.dragon.y = dragonPos.y;
         this.dragon.alive = true;
         
-        // Arrow - random position (not at player start or dragon)
-        do {
-            this.arrow.x = Math.floor(Math.random() * this.gridSize);
-            this.arrow.y = Math.floor(Math.random() * this.gridSize);
-        } while ((this.arrow.x === 0 && this.arrow.y === 0) || 
-                 (this.arrow.x === this.dragon.x && this.arrow.y === this.dragon.y));
+        // Arrow
+        const arrowPos = getRandomPosition();
+        this.arrow.x = arrowPos.x;
+        this.arrow.y = arrowPos.y;
         this.arrow.collected = false;
         this.arrow.inFlight = false;
         
-        // Rope - random position
-        do {
-            this.rope.x = Math.floor(Math.random() * this.gridSize);
-            this.rope.y = Math.floor(Math.random() * this.gridSize);
-        } while ((this.rope.x === 0 && this.rope.y === 0) || 
-                 (this.rope.x === this.dragon.x && this.rope.y === this.dragon.y) ||
-                 (this.rope.x === this.arrow.x && this.rope.y === this.arrow.y));
+        // Rope
+        const ropePos = getRandomPosition();
+        this.rope.x = ropePos.x;
+        this.rope.y = ropePos.y;
         this.rope.collected = false;
         
-        // Pits and bats - will add in later phases
+        // Pits - 12 pits as per original game
         this.pits = [];
+        for (let i = 0; i < 12; i++) {
+            const pitPos = getRandomPosition();
+            this.pits.push({ x: pitPos.x, y: pitPos.y });
+        }
+        
+        console.log(`Entities placed - Dragon: ${this.getCoordinate(this.dragon.x, this.dragon.y)}, Arrow: ${this.getCoordinate(this.arrow.x, this.arrow.y)}, Rope: ${this.getCoordinate(this.rope.x, this.rope.y)}`);
+        console.log(`Pits at:`, this.pits.map(p => this.getCoordinate(p.x, p.y)).join(', '));
+        
+        // Bats - will add in Phase 5
         this.bats = [];
     }
     
@@ -221,6 +238,16 @@ class DnDGame {
         const px = this.player.x;
         const py = this.player.y;
         
+        // Check for pit FIRST (highest priority danger)
+        if (this.isPitAt(px, py)) {
+            if (this.player.hasRope) {
+                this.showMessage('⚠️ You fell in a pit! Your rope saved you!');
+            } else {
+                this.gameOver('💀 You fell into a pit and died! Game Over!');
+                return;
+            }
+        }
+        
         // Check for arrow pickup
         if (!this.arrow.collected && !this.arrow.inFlight && px === this.arrow.x && py === this.arrow.y) {
             this.player.hasArrow = true;
@@ -240,17 +267,21 @@ class DnDGame {
         if (!this.rope.collected && px === this.rope.x && py === this.rope.y) {
             this.player.hasRope = true;
             this.rope.collected = true;
-            this.showMessage('You found a rope!');
+            this.showMessage('You found a rope! It will save you from pits!');
         }
         
         // Check for dragon (game over if you walk into it)
         if (this.dragon.alive && px === this.dragon.x && py === this.dragon.y) {
-            this.gameOver('The dragon devoured you! Game Over!');
+            this.gameOver('🐉 The dragon devoured you! Game Over!');
             return;
         }
         
-        // Check proximity to dragon
+        // Check proximity to dangers
         this.checkProximity();
+    }
+    
+    isPitAt(x, y) {
+        return this.pits.some(pit => pit.x === x && pit.y === y);
     }
     
     checkProximity() {
@@ -260,34 +291,58 @@ class DnDGame {
         const px = this.player.x;
         const py = this.player.y;
         
+        let warnings = [];
+        
         // Check if dragon is adjacent (with wrap-around)
         if (this.dragon.alive) {
-            let dragonNearby = false;
+            const dragonDirections = [];
             
-            // North
             if (this.isAdjacent(px, py, 'north', this.dragon.x, this.dragon.y)) {
                 this.northIndicator.classList.add('active');
-                dragonNearby = true;
+                dragonDirections.push('North');
             }
-            // East
             if (this.isAdjacent(px, py, 'east', this.dragon.x, this.dragon.y)) {
                 this.eastIndicator.classList.add('active');
-                dragonNearby = true;
+                dragonDirections.push('East');
             }
-            // South
             if (this.isAdjacent(px, py, 'south', this.dragon.x, this.dragon.y)) {
                 this.southIndicator.classList.add('active');
-                dragonNearby = true;
+                dragonDirections.push('South');
             }
-            // West
             if (this.isAdjacent(px, py, 'west', this.dragon.x, this.dragon.y)) {
                 this.westIndicator.classList.add('active');
-                dragonNearby = true;
+                dragonDirections.push('West');
             }
             
-            if (dragonNearby) {
-                this.showMessage('🐉 You hear a dragon roar nearby!');
+            if (dragonDirections.length > 0) {
+                warnings.push('🐉 DRAGON roars nearby!');
             }
+        }
+        
+        // Check if pit is adjacent
+        const pitDirections = [];
+        for (const pit of this.pits) {
+            if (this.isAdjacent(px, py, 'north', pit.x, pit.y)) {
+                if (!pitDirections.includes('North')) pitDirections.push('North');
+            }
+            if (this.isAdjacent(px, py, 'east', pit.x, pit.y)) {
+                if (!pitDirections.includes('East')) pitDirections.push('East');
+            }
+            if (this.isAdjacent(px, py, 'south', pit.x, pit.y)) {
+                if (!pitDirections.includes('South')) pitDirections.push('South');
+            }
+            if (this.isAdjacent(px, py, 'west', pit.x, pit.y)) {
+                if (!pitDirections.includes('West')) pitDirections.push('West');
+            }
+        }
+        
+        if (pitDirections.length > 0) {
+            warnings.push(`⚠️ You feel a breeze... pit nearby!`);
+        }
+        
+        // Display combined warnings
+        if (warnings.length > 0) {
+            this.showMessage(warnings.join(' | '));
         }
     }
     
@@ -359,7 +414,7 @@ class DnDGame {
             const coordinate = this.getCoordinate(this.arrow.x, this.arrow.y);
             this.showMessage(`💨 Your arrow missed! It landed at ${coordinate}. Go retrieve it!`);
             
-            // Reposition dragon to a new random location (not at player, not at arrow)
+            // Reposition dragon to a new random location
             this.repositionDragon();
         }
         
@@ -400,12 +455,17 @@ class DnDGame {
     }
     
     repositionDragon() {
-        // Move dragon to new random position (not at player, not at arrow)
+        // Move dragon to new random position (not at player, not at arrow, not at any pit)
+        let newX, newY;
         do {
-            this.dragon.x = Math.floor(Math.random() * this.gridSize);
-            this.dragon.y = Math.floor(Math.random() * this.gridSize);
-        } while ((this.dragon.x === this.player.x && this.dragon.y === this.player.y) ||
-                 (this.dragon.x === this.arrow.x && this.dragon.y === this.arrow.y));
+            newX = Math.floor(Math.random() * this.gridSize);
+            newY = Math.floor(Math.random() * this.gridSize);
+        } while ((newX === this.player.x && newY === this.player.y) ||
+                 (newX === this.arrow.x && newY === this.arrow.y) ||
+                 this.isPitAt(newX, newY));
+        
+        this.dragon.x = newX;
+        this.dragon.y = newY;
         
         console.log(`Dragon repositioned to ${this.getCoordinate(this.dragon.x, this.dragon.y)}`);
     }
