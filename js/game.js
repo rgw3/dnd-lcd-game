@@ -523,7 +523,7 @@ class DnDGame {
         // Track if we picked up an item this turn
         let pickupMessage = null;
         
-        // Check for bat FIRST (teleports you before anything else)
+        // Check for bat FIRST (flies you away before anything else)
         if (this.isBatAt(px, py)) {
             this.handleBatEncounter();
             return;
@@ -587,6 +587,9 @@ class DnDGame {
     handleBatEncounter() {
         this.audio.playBatFlap();
         
+        // Find which bat the player encountered
+        const batIndex = this.bats.findIndex(bat => bat.x === this.player.x && bat.y === this.player.y);
+        
         let newX, newY;
         do {
             newX = Math.floor(Math.random() * this.gridSize);
@@ -598,21 +601,27 @@ class DnDGame {
         this.player.y = newY;
         const newCoord = this.getCoordinate(this.player.x, this.player.y);
         
-        const batMessage = `🦇 A bat grabbed you! Teleported from ${oldCoord} to ${newCoord}!`;
+        // Remove the bat from the array (it disappears after one use)
+        if (batIndex !== -1) {
+            this.bats.splice(batIndex, 1);
+            console.log(`Bat removed. ${this.bats.length} bat(s) remaining.`);
+        }
+        
+        const batMessage = `🦇 A bat grabbed you and flew you from ${oldCoord} to ${newCoord}!`;
         console.log(batMessage);
         
         this.updateDisplay();
         this.renderDungeon();
-        this.checkPositionAfterTeleport(batMessage);
+        this.checkPositionAfterFlight(batMessage);
     }
     
-    checkPositionAfterTeleport(teleportMessage) {
+    checkPositionAfterFlight(flightMessage) {
         const px = this.player.x;
         const py = this.player.y;
         
         if (this.isPitAt(px, py)) {
             if (this.player.hasRope) {
-                this.showMessage(`${teleportMessage} | ⚠️ Landed in a pit! Your rope saved you!`);
+                this.showMessage(`${flightMessage} | ⚠️ Landed in a pit! Your rope saved you!`);
             } else {
                 this.audio.playPitFall();
                 this.gameOver('💀 Bat dropped you into a pit! You died! Game Over!');
@@ -626,10 +635,10 @@ class DnDGame {
             return;
         }
         
-        this.checkProximityAfterBat(teleportMessage);
+        this.checkProximityAfterFlight(flightMessage);
     }
     
-    checkProximityAfterBat(teleportMessage) {
+    checkProximityAfterFlight(flightMessage) {
         const px = this.player.x;
         const py = this.player.y;
         let warnings = [];
@@ -681,9 +690,9 @@ class DnDGame {
         }
         
         if (warnings.length > 0) {
-            this.showMessage(`${teleportMessage} | ${warnings.join(' | ')}`);
+            this.showMessage(`${flightMessage} | ${warnings.join(' | ')}`);
         } else {
-            this.showMessage(teleportMessage);
+            this.showMessage(flightMessage);
         }
     }
     
