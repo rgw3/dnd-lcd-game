@@ -64,26 +64,36 @@ header h1 {
     padding: 20px;
     margin-bottom: 20px;
     position: relative;
-    min-height: 300px;
+    min-height: 400px;
 }
 
 .dungeon-view {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    min-height: 250px;
+    min-height: 350px;
     background-color: #000;
     border: 2px solid #006600;
     border-radius: 3px;
     position: relative;
+    padding: 10px;
+}
+
+#dungeon-canvas {
+    display: block;
+    margin: 0 auto;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 .position-display {
-    font-size: 4rem;
+    font-size: 2rem;
     color: #00ff00;
     text-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
     font-weight: bold;
     letter-spacing: 0.2em;
+    margin-top: 10px;
 }
 
 /* ===================================
@@ -125,6 +135,7 @@ header h1 {
     transform: translate(-50%, -50%);
     width: 200px;
     height: 200px;
+    pointer-events: none;
 }
 
 .indicator {
@@ -263,7 +274,12 @@ button:active {
     }
     
     .position-display {
-        font-size: 3rem;
+        font-size: 1.5rem;
+    }
+    
+    #dungeon-canvas {
+        width: 100%;
+        height: auto;
     }
     
     .status-bar {
