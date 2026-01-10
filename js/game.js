@@ -221,7 +221,6 @@ class DnDGame {
     // ===================================
     
     initializeElements() {
-        this.positionDisplay = document.getElementById('position-display');
         this.scoreDisplay = document.getElementById('score');
         this.timeDisplay = document.getElementById('time');
         this.hasArrowDisplay = document.getElementById('has-arrow');
@@ -247,10 +246,10 @@ class DnDGame {
         this.ctx = this.canvas.getContext('2d');
         
         const scale = window.devicePixelRatio || 1;
-        this.canvas.width = 400 * scale;
-        this.canvas.height = 300 * scale;
-        this.canvas.style.width = '400px';
-        this.canvas.style.height = '300px';
+        this.canvas.width = 500 * scale;
+        this.canvas.height = 400 * scale;
+        this.canvas.style.width = '500px';
+        this.canvas.style.height = '400px';
         this.ctx.scale(scale, scale);
     }
     
@@ -907,8 +906,8 @@ class DnDGame {
     }
     
     drawGrid(ctx) {
-        const cellWidth = 40;
-        const cellHeight = 30;
+        const cellWidth = 50;
+        const cellHeight = 40;
         
         // Draw grid lines
         ctx.strokeStyle = '#006600';
@@ -1066,10 +1065,7 @@ class DnDGame {
     // Display Updates
     // ===================================
     
-    updateDisplay() {
-        const coordinate = this.getCoordinate(this.player.x, this.player.y);
-        this.positionDisplay.textContent = coordinate;
-        
+    updateDisplay() {        
         this.scoreDisplay.textContent = this.score;
         this.hasArrowDisplay.textContent = this.player.hasArrow ? 'Yes' : 'No';
         this.hasRopeDisplay.textContent = this.player.hasRope ? 'Yes' : 'No';
