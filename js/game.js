@@ -882,8 +882,8 @@ class DnDGame {
     
     renderDungeon() {
         const ctx = this.ctx;
-        const width = 400;
-        const height = 300;
+        const width = 500;
+        const height = 400;
         
         // Clear canvas
         ctx.fillStyle = '#000000';
@@ -917,7 +917,7 @@ class DnDGame {
         for (let x = 0; x <= 10; x++) {
             ctx.beginPath();
             ctx.moveTo(x * cellWidth, 0);
-            ctx.lineTo(x * cellWidth, 300);
+            ctx.lineTo(x * cellWidth, 400);
             ctx.stroke();
         }
         
@@ -925,23 +925,23 @@ class DnDGame {
         for (let y = 0; y <= 10; y++) {
             ctx.beginPath();
             ctx.moveTo(0, y * cellHeight);
-            ctx.lineTo(400, y * cellHeight);
+            ctx.lineTo(500, y * cellHeight);
             ctx.stroke();
         }
     }
     
     drawLabels(ctx) {
-        const cellWidth = 40;
-        const cellHeight = 30;
+        const cellWidth = 50;
+        const cellHeight = 40;
         
         ctx.fillStyle = '#00ff00';
-        ctx.font = 'bold 10px Courier New';
+        ctx.font = 'bold 12px Courier New';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
         // Column labels (0-9) - top of grid
         for (let x = 0; x < 10; x++) {
-            ctx.fillText(x.toString(), x * cellWidth + cellWidth / 2, 10);
+            ctx.fillText(x.toString(), x * cellWidth + cellWidth / 2, 12);
         }
         
         // Row labels (A-J) - left of grid
@@ -952,8 +952,8 @@ class DnDGame {
     }
     
     highlightCurrentCell(ctx) {
-        const cellWidth = 40;
-        const cellHeight = 30;
+        const cellWidth = 50;
+        const cellHeight = 40;
         
         // Highlight player's current cell
         ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
@@ -976,8 +976,8 @@ class DnDGame {
     }
     
     drawPlayer(ctx) {
-        const cellWidth = 40;
-        const cellHeight = 30;
+        const cellWidth = 50;
+        const cellHeight = 40;
         
         // Calculate center of player's cell
         const centerX = this.player.x * cellWidth + cellWidth / 2;
@@ -986,23 +986,23 @@ class DnDGame {
         // Draw player circle
         ctx.fillStyle = '#00ff00';
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
         ctx.fill();
         
         // Draw direction indicator (arrow pointing north)
         ctx.strokeStyle = '#00ff00';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(centerX, centerY - 10);
-        ctx.lineTo(centerX - 4, centerY - 6);
-        ctx.moveTo(centerX, centerY - 10);
-        ctx.lineTo(centerX + 4, centerY - 6);
+        ctx.moveTo(centerX, centerY - 12);
+        ctx.lineTo(centerX - 5, centerY - 7);
+        ctx.moveTo(centerX, centerY - 12);
+        ctx.lineTo(centerX + 5, centerY - 7);
         ctx.stroke();
     }
     
     drawAdjacentWarnings(ctx) {
-        const cellWidth = 40;
-        const cellHeight = 30;
+        const cellWidth = 50;
+        const cellHeight = 40;
         const px = this.player.x;
         const py = this.player.y;
         
