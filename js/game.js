@@ -900,7 +900,7 @@ class DnDGame {
         this.highlightCurrentCell(ctx);
         
         // Draw adjacent warnings (entities near player)
-        this.drawAdjacentWarnings(ctx);
+        //this.drawAdjacentWarnings(ctx); //currently removed for purposes of making this more challenging
         
         // Draw player (on top of everything)
         this.drawPlayer(ctx);
