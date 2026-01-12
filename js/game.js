@@ -975,6 +975,11 @@ class DnDGame {
         // Highlight current cell
         this.highlightCurrentCell(ctx);
         
+        // Draw dead dragon if killed
+        if (!this.dragon.alive) {
+            this.drawDeadDragon(ctx);
+        }
+        
         // Draw adjacent warnings (entities near player)
         //this.drawAdjacentWarnings(ctx); //currently removed for purposes of making this more challenging
         
@@ -1050,6 +1055,22 @@ class DnDGame {
             cellWidth,
             cellHeight
         );
+    }
+    
+    drawDeadDragon(ctx) {
+        const cellWidth = 50;
+        const cellHeight = 40;
+        
+        // Calculate center of dragon's cell
+        const centerX = this.dragon.x * cellWidth + cellWidth / 2;
+        const centerY = this.dragon.y * cellHeight + cellHeight / 2;
+        
+        // Draw dragon emoji
+        ctx.font = 'bold 24px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ff0000'; // Red color for dead dragon
+        ctx.fillText('🐉', centerX, centerY);
     }
     
     drawPlayer(ctx) {
