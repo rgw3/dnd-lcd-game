@@ -132,6 +132,57 @@ class AudioManager {
         setTimeout(() => this.playTone(800, 0.15, 'sine'), 100);
     }
     
+    playBatWingsWarning() {
+        if (!this.initialized || this.isMuted) return;
+        
+        // Subtle flapping sound - quieter than actual bat encounter
+        for (let i = 0; i < 2; i++) {
+            setTimeout(() => {
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.masterGain);
+                
+                oscillator.type = 'square';
+                oscillator.frequency.value = 250 + (i * 30);
+                
+                gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.06);
+                
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + 0.06);
+            }, i * 80);
+        }
+    }
+    
+    playPitBreezeWarning() {
+        if (!this.initialized || this.isMuted) return;
+        
+        // Wind/breeze sound - low frequency whoosh
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        const filter = this.audioContext.createBiquadFilter();
+        
+        oscillator.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.masterGain);
+        
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(80, this.audioContext.currentTime);
+        oscillator.frequency.linearRampToValueAtTime(60, this.audioContext.currentTime + 0.4);
+        
+        filter.type = 'lowpass';
+        filter.frequency.value = 200;
+        filter.Q.value = 1;
+        
+        gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
+        
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.4);
+    }
+    
     playVictory() {
         if (!this.initialized || this.isMuted) return;
         
@@ -688,6 +739,7 @@ class DnDGame {
         
         if (pitNearby) {
             warnings.push('⚠️ You feel a breeze... pit nearby!');
+            this.audio.playPitBreezeWarning();
         }
         
         let batNearby = false;
@@ -703,6 +755,7 @@ class DnDGame {
         
         if (batNearby) {
             warnings.push('🦇 You hear flapping wings...');
+            this.audio.playBatWingsWarning();
         }
         
         if (warnings.length > 0) {
@@ -746,6 +799,7 @@ class DnDGame {
         
         if (pitNearby) {
             warnings.push(`⚠️ You feel a breeze... pit nearby!`);
+            this.audio.playPitBreezeWarning();
         }
         
         let batNearby = false;
@@ -761,6 +815,7 @@ class DnDGame {
         
         if (batNearby) {
             warnings.push(`🦇 You hear flapping wings...`);
+            this.audio.playBatWingsWarning();
         }
         
         // Combine pickup message with proximity warnings
